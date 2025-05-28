@@ -98,11 +98,10 @@ func (s3 *S3) Open(name string) (http.File, error) {
 }
 
 func getObject(ctx context.Context, s3 *S3, name string) (*minio.Object, error) {
-	names := []string{name, name + "/index.html", name + "/index.htm"}
+	names := []string{name, name + "/index.html"}
 	if spaFile != "" {
 		names = append(names, spaFile)
 	}
-	names = append(names, "404.html")
 	for _, n := range names {
 		obj, err := s3.GetObject(ctx, s3.bucket, n, minio.GetObjectOptions{})
 		if err != nil {
