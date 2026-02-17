@@ -80,10 +80,10 @@ func (h *httpMinioObject) Readdir(count int) ([]os.FileInfo, error) {
 	}
 	var fileInfos []os.FileInfo
 	for _, objInfo := range objsInfo {
-		if strings.HasSuffix(objInfo.Key, pathSeparator) {
+		if before, ok := strings.CutSuffix(objInfo.Key, pathSeparator); ok {
 			fileInfos = append(fileInfos, objectInfo{
 				oi: minio.ObjectInfo{
-					Key:          strings.TrimSuffix(objInfo.Key, pathSeparator),
+					Key:          before,
 					LastModified: objInfo.LastModified,
 				},
 				prefix: strings.TrimSuffix(objInfo.Key, pathSeparator),

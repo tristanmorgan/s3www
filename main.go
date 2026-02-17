@@ -277,7 +277,7 @@ func main() {
 			if allowedCorsOrigin == "" {
 				return true
 			}
-			for _, allowedOrigin := range strings.Split(allowedCorsOrigin, ",") {
+			for allowedOrigin := range strings.SplitSeq(allowedCorsOrigin, ",") {
 				if wildcard.Match(allowedOrigin, origin) {
 					return true
 				}

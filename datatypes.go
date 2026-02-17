@@ -53,6 +53,6 @@ func (o objectInfo) IsDir() bool {
 	return o.isDir
 }
 
-func (o objectInfo) Sys() interface{} {
+func (o objectInfo) Sys() any {
 	return &syscall.Stat_t{}
 }
