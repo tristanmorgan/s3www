@@ -21,10 +21,32 @@ import (
 	"time"
 
 	minio "github.com/minio/minio-go/v7"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 const (
 	pathSeparator = "/"
+	promNamespace = "s3www"
+	promSubsystem = "object"
+)
+
+var (
+	objectReadCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: promNamespace,
+		Subsystem: promSubsystem,
+		Name:      "object_read_count",
+	})
+	objectSeekCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: promNamespace,
+		Subsystem: promSubsystem,
+		Name:      "object_seek_count",
+	})
+	objectStatCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: promNamespace,
+		Subsystem: promSubsystem,
+		Name:      "object_stat_count",
+	})
 )
 
 // A httpMinioObject implements http.File interface, returned by a S3
@@ -45,10 +67,12 @@ func (h *httpMinioObject) Close() error {
 }
 
 func (h *httpMinioObject) Read(p []byte) (n int, err error) {
+	objectReadCount.Inc()
 	return h.object.Read(p)
 }
 
 func (h *httpMinioObject) Seek(offset int64, whence int) (int64, error) {
+	objectSeekCount.Inc()
 	return h.object.Seek(offset, whence)
 }
 
@@ -99,6 +123,7 @@ func (h *httpMinioObject) Readdir(count int) ([]os.FileInfo, error) {
 }
 
 func (h *httpMinioObject) Stat() (os.FileInfo, error) {
+	objectStatCount.Inc()
 	if h.isDir {
 		return objectInfo{
 			oi: minio.ObjectInfo{

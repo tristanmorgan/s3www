@@ -34,6 +34,10 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/minio/minio-go/v7/pkg/s3utils"
 	"github.com/rs/cors"
+
+	"github.com/prometheus/client_golang/prometheus"
+	promversion "github.com/prometheus/client_golang/prometheus/collectors/version"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // Use e.g.: go build -ldflags "-X main.version=v1.0.0"
@@ -269,6 +273,8 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	duxmux := http.NewServeMux()
+	duxmux.Handle("/metrics", promhttp.Handler())
 	mux := http.FileServer(&S3{client, bucket, bucketPath})
 
 	// Wrap the existing mux with the CORS middleware.
@@ -298,16 +304,18 @@ func main() {
 		AllowCredentials: true,
 	}
 	muxHandler := cors.New(opts).Handler(mux)
+	duxmux.Handle("/", muxHandler)
+	prometheus.MustRegister(promversion.NewCollector("s3www"))
 
 	switch {
 	case letsEncrypt:
 		log.Printf("Started listening on https://%s\n", address)
-		certmagic.HTTPS([]string{address}, muxHandler)
+		certmagic.HTTPS([]string{address}, duxmux)
 	case tlsCert != "" && tlsKey != "":
 		log.Printf("Started listening on https://%s\n", address)
-		log.Fatalln(http.ListenAndServeTLS(address, tlsCert, tlsKey, muxHandler))
+		log.Fatalln(http.ListenAndServeTLS(address, tlsCert, tlsKey, duxmux))
 	default:
 		log.Printf("Started listening on http://%s\n", address)
-		log.Fatalln(http.ListenAndServe(address, muxHandler))
+		log.Fatalln(http.ListenAndServe(address, duxmux))
 	}
 }
