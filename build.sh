@@ -1,7 +1,5 @@
 #!/bin/sh
 
-export DOCKER_HOST=ssh://tristan@inspirone.node.home.consul
-
 TS_VAR=$(date +%s)
 docker build --pull --no-cache --progress plain --platform=linux/amd64 -t registry.service.home.consul/s3www:$TS_VAR-amd64 .
 docker build --pull --no-cache --progress plain --platform=linux/arm64/v8 -t registry.service.home.consul/s3www:$TS_VAR-arm64 .

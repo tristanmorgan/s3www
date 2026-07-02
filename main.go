@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"flag"
 	"fmt"
 	"log"
@@ -36,13 +37,15 @@ import (
 	"github.com/rs/cors"
 
 	"github.com/prometheus/client_golang/prometheus"
-	promversion "github.com/prometheus/client_golang/prometheus/collectors/version"
+	version "github.com/prometheus/client_golang/prometheus/collectors/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	promVersion "github.com/prometheus/common/version"
 )
 
-// Use e.g.: go build -ldflags "-X main.version=v1.0.0"
-// to set the binary version.
-var version = "0.0.0-dev"
+// Version number constant.
+//
+//go:embed .version
+var Version string
 
 // S3 - A S3 implements FileSystem using the minio client
 // allowing access to your S3 buckets and objects.
@@ -204,7 +207,7 @@ func main() {
 	flag.Parse()
 
 	if *versionF {
-		fmt.Println("s3www -", version)
+		fmt.Printf("%s\n", promVersion.Print("s3www"))
 		os.Exit(0)
 	}
 
@@ -305,7 +308,8 @@ func main() {
 	}
 	muxHandler := cors.New(opts).Handler(mux)
 	duxmux.Handle("/", muxHandler)
-	prometheus.MustRegister(promversion.NewCollector("s3www"))
+	promVersion.Version = Version
+	prometheus.MustRegister(version.NewCollector("s3www"))
 
 	switch {
 	case letsEncrypt:
